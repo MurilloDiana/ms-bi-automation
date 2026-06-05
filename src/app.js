@@ -26,11 +26,20 @@ app.use(helmet({
             scriptSrc:  ["'self'", "'unsafe-inline'", "'unsafe-eval'"],
             styleSrc:   ["'self'", "'unsafe-inline'"],
             imgSrc:     ["'self'", 'data:', 'https:'],
-            connectSrc: ["'self'"],
+            connectSrc: ["'self'", 'https:', 'http:'],
         },
     },
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
 }));
-app.use(cors({ origin: config.security.corsOrigin }));
+
+const corsOptions = {
+    origin: config.security.corsOrigin,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization'],
+    optionsSuccessStatus: 200,
+};
+app.options('*', cors(corsOptions)); // preflight para todas las rutas
+app.use(cors(corsOptions));
 app.use(compression());
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
@@ -78,11 +87,19 @@ app.post('/webhook/telegram', (req, res) => {
     res.sendStatus(200);
 });
 
-// Swagger UI
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+// Swagger UI — spec dinamico para que funcione en cualquier entorno
+app.get('/api-docs.json', (req, res) => {
+    const protocol = req.headers['x-forwarded-proto'] || req.protocol;
+    const host     = req.headers['x-forwarded-host']  || req.get('host');
+    res.json({
+        ...swaggerSpec,
+        servers: [{ url: `${protocol}://${host}`, description: 'Servidor actual' }],
+    });
+});
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(null, {
+    swaggerUrl: '/api-docs.json',
     customSiteTitle: 'MS BI Automation - API Docs',
 }));
-app.get('/api-docs.json', (req, res) => res.json(swaggerSpec));
 
 // API
 app.use(config.apiPrefix, require('./routes'));

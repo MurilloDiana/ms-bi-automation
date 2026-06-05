@@ -57,7 +57,7 @@ const swaggerSpec = {
                     {
                         name: 'rol',
                         in: 'query',
-                        schema: { type: 'string', enum: ['SOLICITANTE', 'TECNICO', 'ADMIN'] },
+                        schema: { type: 'string', enum: ['EMPLEADO', 'TECNICO', 'SUPERVISOR', 'ADMIN'] },
                         description: 'Filtrar por rol',
                     },
                 ],
