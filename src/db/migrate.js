@@ -12,7 +12,7 @@ const path = require('path');
 const { pool } = require('../config/database');
 const logger = require('../config/logger');
 
-async function run() {
+async function runMigrations() {
     const dir = path.join(__dirname, 'migrations');
     const files = fs.readdirSync(dir).filter((f) => f.endsWith('.sql')).sort();
 
@@ -27,10 +27,16 @@ async function run() {
         }
     }
     logger.info('Migraciones aplicadas correctamente');
-    await pool.end();
 }
 
-run().catch((err) => {
-    logger.error({ err }, 'Error en migrate');
-    process.exit(1);
-});
+// Cuando se ejecuta directamente: npm run migrate
+if (require.main === module) {
+    runMigrations()
+        .then(() => pool.end())
+        .catch((err) => {
+            logger.error({ err }, 'Error en migrate');
+            process.exit(1);
+        });
+}
+
+module.exports = { runMigrations };
