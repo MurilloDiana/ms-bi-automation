@@ -15,6 +15,7 @@ const swaggerSpec = {
     ],
     tags: [
         { name: 'Health',      description: 'Estado del servicio' },
+        { name: 'Activos',     description: 'Registro y gestion de activos fijos' },
         { name: 'Usuarios',    description: 'Registro y gestion de usuarios del sistema' },
         { name: 'Catalogo',    description: 'Consulta de IDs validos para usar en pruebas (usuarios, activos, areas)' },
         { name: 'Solicitudes', description: 'Gestion de solicitudes de mantenimiento' },
@@ -45,6 +46,56 @@ const swaggerSpec = {
                             },
                         },
                     },
+                },
+            },
+        },
+
+        [`${config.apiPrefix}/activos`]: {
+            post: {
+                tags: ['Activos'],
+                summary: 'Crear activo',
+                description: 'Registra un nuevo activo fijo. El `codigo` se genera automáticamente (ACT-XXXXX). El `status` es `ACTIVE` por defecto.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/CrearActivoInput' },
+                            example: {
+                                name: 'Laptop Dell Latitude 5540',
+                                description: 'Laptop empresarial para área de TIC',
+                                acquisitionDate: '2024-03-15',
+                                category: 'ELECTRONIC_EQUIPMENT',
+                                location: 'Oficina TIC - Piso 2',
+                                status: 'ACTIVE',
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    201: {
+                        description: 'Activo creado exitosamente',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/ActivoResponse' },
+                                example: {
+                                    success: true,
+                                    data: {
+                                        id: 'uuid-generado',
+                                        codigo: 'ACT-00251',
+                                        name: 'Laptop Dell Latitude 5540',
+                                        description: 'Laptop empresarial para área de TIC',
+                                        acquisitionDate: '2024-03-15',
+                                        location: 'Oficina TIC - Piso 2',
+                                        category: 'ELECTRONIC_EQUIPMENT',
+                                        status: 'ACTIVE',
+                                        created_at: '2026-06-10T00:00:00.000Z',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    400: { $ref: '#/components/responses/ValidationError' },
+                    409: { $ref: '#/components/responses/ConflictError' },
                 },
             },
         },
@@ -485,6 +536,47 @@ const swaggerSpec = {
             PrioridadSolicitud: {
                 type: 'string',
                 enum: ['BAJA', 'MEDIA', 'ALTA', 'CRITICA'],
+            },
+            CategoryActivo: {
+                type: 'string',
+                enum: ['ELECTRONIC_EQUIPMENT', 'HVAC_EQUIPMENT', 'FIXTURES', 'OTHERS'],
+            },
+            StatusActivo: {
+                type: 'string',
+                enum: ['ACTIVE', 'IN_STORAGE', 'LOST', 'DAMAGED', 'RETIRED', 'UNDER_MAINTENANCE'],
+            },
+            CrearActivoInput: {
+                type: 'object',
+                required: ['name', 'acquisitionDate', 'category'],
+                properties: {
+                    name:            { type: 'string', minLength: 2, maxLength: 150, description: 'Nombre del activo' },
+                    description:     { type: 'string', maxLength: 500, description: 'Descripción opcional' },
+                    acquisitionDate: { type: 'string', format: 'date', description: 'Fecha de adquisición (ISO 8601)' },
+                    category:        { $ref: '#/components/schemas/CategoryActivo' },
+                    location:        { type: 'string', maxLength: 150, description: 'Ubicación física del activo' },
+                    status:          { $ref: '#/components/schemas/StatusActivo', default: 'ACTIVE' },
+                    areaId:          { type: 'integer', minimum: 1, description: 'ID del área (opcional)' },
+                },
+            },
+            ActivoData: {
+                type: 'object',
+                properties: {
+                    id:              { type: 'string', format: 'uuid' },
+                    codigo:          { type: 'string', example: 'ACT-00251' },
+                    name:            { type: 'string' },
+                    description:     { type: 'string', nullable: true },
+                    acquisitionDate: { type: 'string', format: 'date' },
+                    location:        { type: 'string', nullable: true },
+                    category:        { $ref: '#/components/schemas/CategoryActivo' },
+                    status:          { $ref: '#/components/schemas/StatusActivo' },
+                    created_at:      { type: 'string', format: 'date-time' },
+                },
+            },
+            ActivoResponse: {
+                allOf: [
+                    { $ref: '#/components/schemas/SuccessResponse' },
+                    { properties: { data: { $ref: '#/components/schemas/ActivoData' } } },
+                ],
             },
             RolUsuario: {
                 type: 'string',

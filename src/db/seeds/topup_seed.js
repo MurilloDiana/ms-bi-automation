@@ -13,6 +13,40 @@ const depreciationService = require('../../services/depreciation.service');
 
 const MIN_SOLICITUDES    = 2000;
 const MIN_DEPRECIACION   = 2000;
+const MIN_ACTIVOS        = 2000;
+
+const CATEGORIES   = ['ELECTRONIC_EQUIPMENT', 'HVAC_EQUIPMENT', 'FIXTURES', 'OTHERS'];
+const STATUSES     = ['ACTIVE', 'ACTIVE', 'ACTIVE', 'ACTIVE', 'ACTIVE', 'ACTIVE',
+                      'UNDER_MAINTENANCE', 'UNDER_MAINTENANCE',
+                      'IN_STORAGE', 'DAMAGED', 'RETIRED'];
+
+const CATEGORY_TO_NOMBRE = {
+    ELECTRONIC_EQUIPMENT: 'Computadoras',
+    HVAC_EQUIPMENT:       'Climatizacion',
+    FIXTURES:             'Mobiliario',
+    OTHERS:               'Equipos de Oficina',
+};
+
+const STATUS_TO_ESTADO = {
+    ACTIVE:            'OPERATIVO',
+    IN_STORAGE:        'FUERA_DE_SERVICIO',
+    LOST:              'FUERA_DE_SERVICIO',
+    DAMAGED:           'FUERA_DE_SERVICIO',
+    RETIRED:           'DADO_DE_BAJA',
+    UNDER_MAINTENANCE: 'EN_MANTENIMIENTO',
+};
+
+const NOMBRES_POR_CAT = {
+    ELECTRONIC_EQUIPMENT: ['Laptop HP ProBook', 'Monitor Dell 24"', 'Teclado Logitech MX', 'Switch Cisco 24p',
+                           'PC Dell OptiPlex', 'Impresora Canon LBP', 'Scanner Fujitsu', 'Proyector Epson',
+                           'Router Mikrotik', 'UPS APC 1500VA', 'Tablet Samsung Tab', 'Camara IP Hikvision'],
+    HVAC_EQUIPMENT:       ['AC Daikin 18000 BTU', 'Ventilador Industrial', 'Purificador Aire Dyson',
+                           'Calefactor Electrico', 'AC LG Inverter', 'Extractor Industrial'],
+    FIXTURES:             ['Escritorio Ejecutivo L', 'Silla Ergonomica Herman Miller', 'Archivero 4 Gavetas',
+                           'Mesa de Reuniones', 'Estante Metalico', 'Sofa de Espera', 'Locker 6 Puestos'],
+    OTHERS:               ['Vehiculo Toyota Hilux', 'Moto Honda CB190', 'Compresor 50L',
+                           'Generador 5kW', 'Extintor CO2', 'Carretilla Hidraulica'],
+};
 
 const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
 
@@ -38,14 +72,78 @@ const TIPOS_SOL   = ['CORRECTIVO', 'PREVENTIVO', 'PREDICTIVO'];
 const PRIORIDADES = ['BAJA', 'MEDIA', 'ALTA', 'CRITICA'];
 
 async function contarActual() {
-    const [sol, dep] = await Promise.all([
+    const [sol, dep, act] = await Promise.all([
         query('SELECT COUNT(*) FROM solicitudes_mantenimiento'),
         query('SELECT COUNT(*) FROM depreciacion_mensual'),
+        query('SELECT COUNT(*) FROM activos'),
     ]);
     return {
         solicitudes:  parseInt(sol.rows[0].count),
         depreciacion: parseInt(dep.rows[0].count),
+        activos:      parseInt(act.rows[0].count),
     };
+}
+
+async function rellenarActivos(faltantes) {
+    const [areas, cats] = await Promise.all([
+        query('SELECT id FROM areas'),
+        query('SELECT id, nombre FROM categorias_activo'),
+    ]);
+    const areaIds = areas.rows.map(r => r.id);
+    const catMap  = {};
+    cats.rows.forEach(c => { catMap[c.nombre] = c.id; });
+
+    // Usar el mayor número en códigos existentes para no colisionar
+    const maxRow = await query(
+        `SELECT COALESCE(MAX(CAST(REGEXP_REPLACE(codigo, '[^0-9]', '', 'g') AS INTEGER)), 0) AS max_seq
+         FROM activos WHERE codigo ~ '^ACT-'`
+    );
+    let seq = parseInt(maxRow.rows[0].max_seq);
+
+    await withTransaction(async (client) => {
+        for (let i = 0; i < faltantes; i++) {
+            seq++;
+            const category = pick(CATEGORIES);
+            const status   = pick(STATUSES);
+            const estado   = STATUS_TO_ESTADO[status];
+            const catNombre = CATEGORY_TO_NOMBRE[category];
+            const categoriaId = catMap[catNombre] ?? cats.rows[0].id;
+            const areaId   = pick(areaIds);
+            const nombres  = NOMBRES_POR_CAT[category];
+            const nombre   = `${pick(nombres)} #${seq}`;
+            const codigo   = `ACT-${String(seq).padStart(5, '0')}`;
+            const fechaAdq = faker.date.between({
+                from: new Date(Date.now() - 4 * 365 * 24 * 3600_000),
+                to:   new Date(),
+            });
+            const ubicacion = faker.helpers.arrayElement([
+                'Oficina Central', 'Sala de Reuniones', 'Almacén', 'Recepción',
+                'Sala de Servidores', 'Planta Baja', 'Piso 1', 'Piso 2',
+            ]);
+
+            await client.query(
+                `INSERT INTO activos
+                    (codigo, nombre, descripcion, categoria_id, area_id,
+                     fecha_adquisicion, valor_compra, estado, ubicacion,
+                     category, status)
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)`,
+                [
+                    codigo, nombre,
+                    faker.commerce.productDescription().substring(0, 200),
+                    categoriaId, areaId,
+                    fechaAdq,
+                    faker.number.int({ min: 200, max: 30000 }),
+                    estado, ubicacion, category, status,
+                ]
+            );
+
+            if ((i + 1) % 200 === 0) {
+                logger.info({ progreso: `${i + 1}/${faltantes}` }, 'Activos insertando...');
+            }
+        }
+    });
+
+    logger.info({ insertados: faltantes }, 'Activos añadidos');
 }
 
 async function cargarReferencias() {
@@ -152,6 +250,15 @@ async function main() {
         await rellenarSolicitudes(faltanSol, refs);
     } else {
         logger.info({ actual: antes.solicitudes }, 'Solicitudes ya superan el mínimo ✓');
+    }
+
+    // --- Activos ---
+    const faltanAct = Math.max(0, MIN_ACTIVOS - antes.activos);
+    if (faltanAct > 0) {
+        logger.info({ faltantes: faltanAct }, `Rellenando activos hasta ${MIN_ACTIVOS}`);
+        await rellenarActivos(faltanAct);
+    } else {
+        logger.info({ actual: antes.activos }, 'Activos ya superan el mínimo ✓');
     }
 
     // --- Depreciación ---

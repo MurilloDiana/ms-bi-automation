@@ -2,6 +2,16 @@
 
 const Joi = require('joi');
 
+const crearActivoSchema = Joi.object({
+    name:            Joi.string().min(2).max(150).required(),
+    description:     Joi.string().max(500).optional().allow('', null),
+    acquisitionDate: Joi.date().iso().required(),
+    category:        Joi.string().valid('ELECTRONIC_EQUIPMENT','HVAC_EQUIPMENT','FIXTURES','OTHERS').required(),
+    location:        Joi.string().max(150).optional().allow('', null),
+    status:          Joi.string().valid('ACTIVE','IN_STORAGE','LOST','DAMAGED','RETIRED','UNDER_MAINTENANCE').default('ACTIVE'),
+    areaId:          Joi.number().integer().positive().optional(),
+});
+
 const crearUsuarioSchema = Joi.object({
     email:     Joi.string().email().required(),
     firstname: Joi.string().min(1).max(75).required(),
@@ -49,6 +59,7 @@ const reporteQuerySchema = Joi.object({
 });
 
 module.exports = {
+    crearActivoSchema,
     crearUsuarioSchema,
     crearSolicitudSchema,
     cambiarEstadoSchema,

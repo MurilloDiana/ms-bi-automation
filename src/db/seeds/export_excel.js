@@ -100,11 +100,15 @@ async function main() {
              ORDER BY u.rol, u.nombre`),
 
         exportarTabla('activos',
-            `SELECT a.id, a.codigo, a.nombre, a.descripcion,
-                    c.nombre AS categoria, ar.nombre AS area,
+            `SELECT a.id, a.codigo,
+                    a.nombre AS name, a.descripcion AS description,
+                    a.fecha_adquisicion AS "acquisitionDate",
+                    a.category, a.status,
+                    a.ubicacion AS location,
+                    c.nombre AS categoria_legacy, ar.nombre AS area,
                     u.nombre AS responsable,
-                    a.fecha_adquisicion, a.valor_compra, a.estado,
-                    a.proveedor, a.serie, a.ubicacion, a.created_at
+                    a.valor_compra, a.estado AS estado_legacy,
+                    a.proveedor, a.serie, a.created_at
              FROM activos a
              JOIN categorias_activo c ON c.id = a.categoria_id
              JOIN areas ar            ON ar.id = a.area_id
