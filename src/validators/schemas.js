@@ -56,6 +56,7 @@ const reporteQuerySchema = Joi.object({
     periodo: Joi.date().iso().optional(),
     areaId:  Joi.number().integer().positive().optional(),
     limit:   Joi.number().integer().min(1).max(500).default(20),
+    formato: Joi.string().valid('json', 'excel', 'pdf').default('json'),
 });
 
 module.exports = {

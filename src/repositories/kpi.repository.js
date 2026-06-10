@@ -144,6 +144,78 @@ async function reporteProductividadTecnico({ desde, hasta }) {
 }
 
 /**
+ * R6: Inventario general de activos (snapshot completo con valor en libros actual).
+ */
+async function reporteInventarioActivos({ areaId = null } = {}) {
+    const sql = `
+        SELECT
+            a.codigo, a.nombre, c.nombre AS categoria, ar.nombre AS area,
+            a.category, a.status, a.estado,
+            a.fecha_adquisicion, a.valor_compra,
+            COALESCE(d.valor_libro, a.valor_compra) AS valor_libro,
+            a.ubicacion, a.created_at
+        FROM activos a
+        JOIN categorias_activo c ON c.id = a.categoria_id
+        JOIN areas ar            ON ar.id = a.area_id
+        LEFT JOIN LATERAL (
+            SELECT valor_libro FROM depreciacion_mensual dm
+            WHERE dm.activo_id = a.id ORDER BY periodo DESC LIMIT 1
+        ) d ON TRUE
+        WHERE ($1::INT IS NULL OR a.area_id = $1)
+        ORDER BY a.codigo`;
+    const r = await query(sql, [areaId]);
+    return { total: r.rowCount, items: r.rows };
+}
+
+/**
+ * R7: Costo de mantenimiento agrupado por mes.
+ */
+async function reporteCostosMantenimientoMensual({ desde, hasta } = {}) {
+    const sql = `
+        SELECT
+            TO_CHAR(DATE_TRUNC('month', fecha_solicitud), 'YYYY-MM') AS periodo,
+            COUNT(*)::INT AS total_solicitudes,
+            COUNT(*) FILTER (WHERE estado = 'COMPLETADO')::INT AS completadas,
+            COALESCE(SUM(costo) FILTER (WHERE estado = 'COMPLETADO'), 0) AS costo_total,
+            ROUND(COALESCE(AVG(costo) FILTER (WHERE estado = 'COMPLETADO'), 0)::NUMERIC, 2) AS costo_promedio
+        FROM solicitudes_mantenimiento
+        WHERE fecha_solicitud >= COALESCE($1::DATE, DATE_TRUNC('month', NOW()) - INTERVAL '11 months')
+          AND fecha_solicitud <  COALESCE($2::DATE, NOW()) + INTERVAL '1 day'
+        GROUP BY 1
+        ORDER BY 1 ASC`;
+    const r = await query(sql, [desde || null, hasta || null]);
+    return { ventana: { desde: desde || null, hasta: hasta || null }, items: r.rows };
+}
+
+/**
+ * R8: Activos por vida util restante (candidatos a reemplazo, ordenados de menor a mayor).
+ */
+async function reporteVidaUtilActivos({ areaId = null, limit = 50 } = {}) {
+    const sql = `
+        SELECT
+            a.codigo, a.nombre, c.nombre AS categoria, ar.nombre AS area,
+            a.fecha_adquisicion, c.vida_util_anios,
+            ROUND((EXTRACT(EPOCH FROM (NOW() - a.fecha_adquisicion)) / (365.25 * 86400))::NUMERIC, 2) AS anios_transcurridos,
+            ROUND((c.vida_util_anios - EXTRACT(EPOCH FROM (NOW() - a.fecha_adquisicion)) / (365.25 * 86400))::NUMERIC, 2) AS anios_restantes,
+            a.valor_compra,
+            COALESCE(d.valor_libro, a.valor_compra) AS valor_libro,
+            a.estado
+        FROM activos a
+        JOIN categorias_activo c ON c.id = a.categoria_id
+        JOIN areas ar            ON ar.id = a.area_id
+        LEFT JOIN LATERAL (
+            SELECT valor_libro FROM depreciacion_mensual dm
+            WHERE dm.activo_id = a.id ORDER BY periodo DESC LIMIT 1
+        ) d ON TRUE
+        WHERE a.estado <> 'DADO_DE_BAJA'
+          AND ($1::INT IS NULL OR a.area_id = $1)
+        ORDER BY anios_restantes ASC
+        LIMIT $2`;
+    const r = await query(sql, [areaId, limit]);
+    return { items: r.rows };
+}
+
+/**
  * R5: Distribucion de activos por area (conteo, valor, depreciacion).
  */
 async function reporteDistribucionPorArea() {
@@ -176,4 +248,7 @@ module.exports = {
     reporteTopFallas,
     reporteProductividadTecnico,
     reporteDistribucionPorArea,
+    reporteInventarioActivos,
+    reporteCostosMantenimientoMensual,
+    reporteVidaUtilActivos,
 };

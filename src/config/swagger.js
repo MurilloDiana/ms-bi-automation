@@ -459,7 +459,10 @@ const swaggerSpec = {
                         required: true,
                         schema: {
                             type: 'string',
-                            enum: ['solicitudes-por-estado', 'depreciacion', 'top-fallas', 'productividad-tecnico', 'distribucion-area'],
+                            enum: [
+                                'solicitudes-por-estado', 'depreciacion', 'top-fallas', 'productividad-tecnico', 'distribucion-area',
+                                'inventario-activos', 'costos-mantenimiento-mensual', 'vida-util-activos',
+                            ],
                         },
                         description: 'Tipo de reporte',
                     },
@@ -468,10 +471,15 @@ const swaggerSpec = {
                     { name: 'periodo', in: 'query', schema: { type: 'string', format: 'date' }, description: 'Periodo especifico (ISO 8601)' },
                     { name: 'areaId', in: 'query', schema: { type: 'integer', minimum: 1 }, description: 'Filtrar por area' },
                     { name: 'limit', in: 'query', schema: { type: 'integer', minimum: 1, maximum: 500, default: 20 }, description: 'Maximo de registros' },
+                    {
+                        name: 'formato', in: 'query',
+                        schema: { type: 'string', enum: ['json', 'excel', 'pdf'], default: 'json' },
+                        description: 'Formato de salida. `excel` y `pdf` descargan el reporte como archivo adjunto.',
+                    },
                 ],
                 responses: {
                     200: {
-                        description: 'Datos del reporte',
+                        description: 'Datos del reporte. Si `formato=excel` retorna un .xlsx; si `formato=pdf` retorna un .pdf.',
                         content: {
                             'application/json': {
                                 schema: {
@@ -490,6 +498,12 @@ const swaggerSpec = {
                                         },
                                     ],
                                 },
+                            },
+                            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': {
+                                schema: { type: 'string', format: 'binary' },
+                            },
+                            'application/pdf': {
+                                schema: { type: 'string', format: 'binary' },
                             },
                         },
                     },

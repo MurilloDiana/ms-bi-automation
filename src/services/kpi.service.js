@@ -46,11 +46,14 @@ async function obtenerDashboardKpis() {
 
 async function obtenerReporte(tipo, params) {
     switch (tipo) {
-        case 'solicitudes-por-estado': return kpiRepo.reporteSolicitudesPorEstado(params);
-        case 'depreciacion':           return kpiRepo.reporteDepreciacion(params);
-        case 'top-fallas':             return kpiRepo.reporteTopFallas(params);
-        case 'productividad-tecnico':  return kpiRepo.reporteProductividadTecnico(params);
-        case 'distribucion-area':      return kpiRepo.reporteDistribucionPorArea();
+        case 'solicitudes-por-estado':       return kpiRepo.reporteSolicitudesPorEstado(params);
+        case 'depreciacion':                 return kpiRepo.reporteDepreciacion(params);
+        case 'top-fallas':                   return kpiRepo.reporteTopFallas(params);
+        case 'productividad-tecnico':        return kpiRepo.reporteProductividadTecnico(params);
+        case 'distribucion-area':            return kpiRepo.reporteDistribucionPorArea();
+        case 'inventario-activos':           return kpiRepo.reporteInventarioActivos(params);
+        case 'costos-mantenimiento-mensual': return kpiRepo.reporteCostosMantenimientoMensual(params);
+        case 'vida-util-activos':            return kpiRepo.reporteVidaUtilActivos(params);
         default:
             throw new Error(`Reporte desconocido: ${tipo}`);
     }
