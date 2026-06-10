@@ -15,6 +15,7 @@ const swaggerSpec = {
     ],
     tags: [
         { name: 'Health',      description: 'Estado del servicio' },
+        { name: 'Usuarios',    description: 'Registro y gestion de usuarios del sistema' },
         { name: 'Catalogo',    description: 'Consulta de IDs validos para usar en pruebas (usuarios, activos, areas)' },
         { name: 'Solicitudes', description: 'Gestion de solicitudes de mantenimiento' },
         { name: 'KPIs',        description: 'Dashboard de indicadores clave de rendimiento' },
@@ -44,6 +45,55 @@ const swaggerSpec = {
                             },
                         },
                     },
+                },
+            },
+        },
+
+        [`${config.apiPrefix}/usuarios`]: {
+            post: {
+                tags: ['Usuarios'],
+                summary: 'Crear usuario',
+                description: 'Registra un nuevo usuario en el sistema. El usuario queda activo (`enabled: true`) por defecto. La contraseña se almacena hasheada y nunca se devuelve en la respuesta.',
+                requestBody: {
+                    required: true,
+                    content: {
+                        'application/json': {
+                            schema: { $ref: '#/components/schemas/CrearUsuarioInput' },
+                            example: {
+                                email: 'diana@empresa.com',
+                                firstname: 'Diana',
+                                lastname: 'Murillo',
+                                role: 'EMPLEADO',
+                                password: 'secreto123',
+                                enabled: true,
+                            },
+                        },
+                    },
+                },
+                responses: {
+                    201: {
+                        description: 'Usuario creado exitosamente',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/UsuarioResponse' },
+                                example: {
+                                    success: true,
+                                    data: {
+                                        id: '4091a08a-d07f-4121-8ae6-5a0f3f66e848',
+                                        email: 'diana@empresa.com',
+                                        firstname: 'Diana',
+                                        lastname: 'Murillo',
+                                        nombre: 'Diana Murillo',
+                                        rol: 'EMPLEADO',
+                                        activo: true,
+                                        created_at: '2026-06-10T03:02:37.142Z',
+                                    },
+                                },
+                            },
+                        },
+                    },
+                    400: { $ref: '#/components/responses/ValidationError' },
+                    409: { $ref: '#/components/responses/ConflictError' },
                 },
             },
         },
@@ -435,6 +485,41 @@ const swaggerSpec = {
             PrioridadSolicitud: {
                 type: 'string',
                 enum: ['BAJA', 'MEDIA', 'ALTA', 'CRITICA'],
+            },
+            RolUsuario: {
+                type: 'string',
+                enum: ['ADMIN', 'TECNICO', 'EMPLEADO', 'SUPERVISOR'],
+            },
+            CrearUsuarioInput: {
+                type: 'object',
+                required: ['email', 'firstname', 'lastname', 'role', 'password'],
+                properties: {
+                    email:     { type: 'string', format: 'email', description: 'Email unico del usuario' },
+                    firstname: { type: 'string', minLength: 1, maxLength: 75, description: 'Nombre(s)' },
+                    lastname:  { type: 'string', minLength: 1, maxLength: 75, description: 'Apellido(s)' },
+                    role:      { $ref: '#/components/schemas/RolUsuario' },
+                    password:  { type: 'string', minLength: 6, maxLength: 128, description: 'Contraseña (minimo 6 caracteres)' },
+                    enabled:   { type: 'boolean', default: true, description: 'Activo al registrarse (true por defecto)' },
+                },
+            },
+            UsuarioData: {
+                type: 'object',
+                properties: {
+                    id:         { type: 'string', format: 'uuid' },
+                    email:      { type: 'string', format: 'email' },
+                    firstname:  { type: 'string' },
+                    lastname:   { type: 'string' },
+                    nombre:     { type: 'string', description: 'Nombre completo (firstname + lastname)' },
+                    rol:        { $ref: '#/components/schemas/RolUsuario' },
+                    activo:     { type: 'boolean' },
+                    created_at: { type: 'string', format: 'date-time' },
+                },
+            },
+            UsuarioResponse: {
+                allOf: [
+                    { $ref: '#/components/schemas/SuccessResponse' },
+                    { properties: { data: { $ref: '#/components/schemas/UsuarioData' } } },
+                ],
             },
             CrearSolicitudInput: {
                 type: 'object',
