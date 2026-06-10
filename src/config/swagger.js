@@ -63,7 +63,7 @@ const swaggerSpec = {
                                 email: 'diana@empresa.com',
                                 firstname: 'Diana',
                                 lastname: 'Murillo',
-                                role: 'EMPLEADO',
+                                role: 'OPERADOR',
                                 password: 'secreto123',
                                 enabled: true,
                             },
@@ -84,7 +84,7 @@ const swaggerSpec = {
                                         firstname: 'Diana',
                                         lastname: 'Murillo',
                                         nombre: 'Diana Murillo',
-                                        rol: 'EMPLEADO',
+                                        rol: 'OPERADOR',
                                         activo: true,
                                         created_at: '2026-06-10T03:02:37.142Z',
                                     },
@@ -107,7 +107,7 @@ const swaggerSpec = {
                     {
                         name: 'rol',
                         in: 'query',
-                        schema: { type: 'string', enum: ['EMPLEADO', 'TECNICO', 'SUPERVISOR', 'ADMIN'] },
+                        schema: { type: 'string', enum: ['SUPERADMIN', 'GERENTE', 'TECNICO', 'ASISTENTE', 'OPERADOR'] },
                         description: 'Filtrar por rol',
                     },
                 ],
@@ -488,7 +488,7 @@ const swaggerSpec = {
             },
             RolUsuario: {
                 type: 'string',
-                enum: ['ADMIN', 'TECNICO', 'EMPLEADO', 'SUPERVISOR'],
+                enum: ['SUPERADMIN', 'GERENTE', 'TECNICO', 'ASISTENTE', 'OPERADOR'],
             },
             CrearUsuarioInput: {
                 type: 'object',

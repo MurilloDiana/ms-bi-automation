@@ -140,29 +140,29 @@ async function seedUsuarios(client, areaIds) {
     for (let i = 0; i < 2; i++) {
         const r = await client.query(
             `INSERT INTO usuarios (nombre, email, rol, area_id)
-             VALUES ($1,$2,'ADMIN',$3) RETURNING id`,
+             VALUES ($1,$2,'SUPERADMIN',$3) RETURNING id`,
             [trunc(faker.person.fullName(), 150), `admin${i+1}@empresa.com`, areaIds[0]]
         );
-        usuarios.push({ id: r.rows[0].id, rol: 'ADMIN' });
+        usuarios.push({ id: r.rows[0].id, rol: 'SUPERADMIN' });
     }
 
     for (let i = 0; i < 6; i++) {
         const r = await client.query(
             `INSERT INTO usuarios (nombre, email, rol, area_id)
-             VALUES ($1,$2,'SUPERVISOR',$3) RETURNING id`,
+             VALUES ($1,$2,'GERENTE',$3) RETURNING id`,
             [trunc(faker.person.fullName(), 150), `supervisor${i+1}@empresa.com`, areaIds[i]]
         );
-        usuarios.push({ id: r.rows[0].id, rol: 'SUPERVISOR' });
+        usuarios.push({ id: r.rows[0].id, rol: 'GERENTE' });
     }
 
     for (let i = 0; i < 44; i++) {
         const r = await client.query(
             `INSERT INTO usuarios (nombre, email, rol, area_id)
-             VALUES ($1,$2,'EMPLEADO',$3) RETURNING id`,
+             VALUES ($1,$2,'OPERADOR',$3) RETURNING id`,
             [trunc(faker.person.fullName(), 150), `empleado${i+1}@empresa.com`,
              pick(areaIds)]
         );
-        usuarios.push({ id: r.rows[0].id, rol: 'EMPLEADO' });
+        usuarios.push({ id: r.rows[0].id, rol: 'OPERADOR' });
     }
 
     logger.info({ count: usuarios.length }, 'Usuarios creados');
@@ -170,7 +170,7 @@ async function seedUsuarios(client, areaIds) {
 }
 
 async function seedActivos(client, areaIds, categorias, usuarios) {
-    const empleados = usuarios.filter((u) => u.rol === 'EMPLEADO' || u.rol === 'SUPERVISOR');
+    const empleados = usuarios.filter((u) => u.rol === 'OPERADOR' || u.rol === 'GERENTE');
     const activos = [];
 
     for (let i = 0; i < 250; i++) {
@@ -208,7 +208,7 @@ async function seedActivos(client, areaIds, categorias, usuarios) {
 
 async function seedSolicitudes(client, activos, usuarios) {
     const tecnicos  = usuarios.filter((u) => u.rol === 'TECNICO');
-    const empleados = usuarios.filter((u) => u.rol !== 'TECNICO' && u.rol !== 'ADMIN');
+    const empleados = usuarios.filter((u) => u.rol !== 'TECNICO' && u.rol !== 'SUPERADMIN');
     const ahora     = new Date();
     const inicio18m = new Date(ahora - 18 * 30 * 24 * 3600_000);
 
