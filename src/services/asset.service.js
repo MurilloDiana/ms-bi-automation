@@ -14,4 +14,8 @@ async function crearActivo(data) {
     }
 }
 
-module.exports = { crearActivo };
+async function listarActivos() {
+    return assetRepo.listar();
+}
+
+module.exports = { crearActivo, listarActivos };

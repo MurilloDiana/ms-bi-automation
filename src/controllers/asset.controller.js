@@ -10,4 +10,11 @@ async function crear(req, res, next) {
     } catch (err) { next(err); }
 }
 
-module.exports = { crear };
+async function listar(req, res, next) {
+    try {
+        const activos = await service.listarActivos();
+        return ok(res, activos);
+    } catch (err) { next(err); }
+}
+
+module.exports = { crear, listar };

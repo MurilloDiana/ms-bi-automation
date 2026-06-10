@@ -98,6 +98,21 @@ const swaggerSpec = {
                     409: { $ref: '#/components/responses/ConflictError' },
                 },
             },
+            get: {
+                tags: ['Activos'],
+                summary: 'Listar activos',
+                description: 'Retorna todos los activos registrados, ordenados del mas reciente al mas antiguo.',
+                responses: {
+                    200: {
+                        description: 'Lista de activos',
+                        content: {
+                            'application/json': {
+                                schema: { $ref: '#/components/schemas/ActivoListResponse' },
+                            },
+                        },
+                    },
+                },
+            },
         },
 
         [`${config.apiPrefix}/usuarios`]: {
@@ -576,6 +591,27 @@ const swaggerSpec = {
                 allOf: [
                     { $ref: '#/components/schemas/SuccessResponse' },
                     { properties: { data: { $ref: '#/components/schemas/ActivoData' } } },
+                ],
+            },
+            ActivoListItem: {
+                allOf: [
+                    { $ref: '#/components/schemas/ActivoData' },
+                    {
+                        type: 'object',
+                        properties: {
+                            areaId:       { type: 'integer' },
+                            areaName:     { type: 'string' },
+                            categoryId:   { type: 'integer' },
+                            categoryName: { type: 'string' },
+                            updated_at:   { type: 'string', format: 'date-time' },
+                        },
+                    },
+                ],
+            },
+            ActivoListResponse: {
+                allOf: [
+                    { $ref: '#/components/schemas/SuccessResponse' },
+                    { properties: { data: { type: 'array', items: { $ref: '#/components/schemas/ActivoListItem' } } } },
                 ],
             },
             RolUsuario: {

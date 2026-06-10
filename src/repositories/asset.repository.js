@@ -62,6 +62,22 @@ async function crear({ name, description, acquisitionDate, category, location, s
     return r.rows[0];
 }
 
+async function listar() {
+    const r = await query(
+        `SELECT a.id, a.codigo, a.nombre AS name, a.descripcion AS description,
+                a.fecha_adquisicion AS "acquisitionDate",
+                a.ubicacion AS location, a.category, a.status,
+                a.area_id AS "areaId", ar.nombre AS "areaName",
+                a.categoria_id AS "categoryId", c.nombre AS "categoryName",
+                a.created_at, a.updated_at
+         FROM activos a
+         JOIN categorias_activo c ON c.id = a.categoria_id
+         JOIN areas ar           ON ar.id = a.area_id
+         ORDER BY a.created_at DESC`
+    );
+    return r.rows;
+}
+
 async function buscarPorCodigoONombre(termino) {
     const r = await query(
         `SELECT id, codigo, nombre, estado, area_id
@@ -107,4 +123,4 @@ async function cambiarEstado(id, nuevoEstado) {
     return r.rows[0] || null;
 }
 
-module.exports = { crear, buscarPorCodigoONombre, obtenerPorId, listarTodos, cambiarEstado };
+module.exports = { crear, listar, buscarPorCodigoONombre, obtenerPorId, listarTodos, cambiarEstado };

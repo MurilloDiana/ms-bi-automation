@@ -9,4 +9,6 @@ router.post('/',
     validate(schemas.crearActivoSchema, 'body'),
     ctrl.crear);
 
+router.get('/', ctrl.listar);
+
 module.exports = router;
