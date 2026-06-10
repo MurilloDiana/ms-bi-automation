@@ -2,6 +2,15 @@
 
 const Joi = require('joi');
 
+const crearUsuarioSchema = Joi.object({
+    email:     Joi.string().email().required(),
+    firstname: Joi.string().min(1).max(75).required(),
+    lastname:  Joi.string().min(1).max(75).required(),
+    role:      Joi.string().valid('ADMIN','TECNICO','EMPLEADO','SUPERVISOR').required(),
+    password:  Joi.string().min(6).max(128).required(),
+    enabled:   Joi.boolean().default(true),
+});
+
 const crearSolicitudSchema = Joi.object({
     solicitante_id: Joi.string().uuid().required(),
     activo_id:      Joi.string().uuid().required(),
@@ -40,6 +49,7 @@ const reporteQuerySchema = Joi.object({
 });
 
 module.exports = {
+    crearUsuarioSchema,
     crearSolicitudSchema,
     cambiarEstadoSchema,
     listarSolicitudesSchema,

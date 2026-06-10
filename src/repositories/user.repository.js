@@ -2,6 +2,16 @@
 
 const { query } = require('../config/database');
 
+async function crear({ email, firstname, lastname, rol, password_hash, activo }) {
+    const r = await query(
+        `INSERT INTO usuarios (email, nombre, firstname, lastname, rol, password_hash, activo)
+         VALUES ($1, $2, $3, $4, $5, $6, $7)
+         RETURNING id, email, firstname, lastname, nombre, rol, activo, created_at`,
+        [email, `${firstname} ${lastname}`, firstname, lastname, rol, password_hash, activo]
+    );
+    return r.rows[0];
+}
+
 async function buscarPorEmail(email) {
     const r = await query('SELECT * FROM usuarios WHERE email = $1 AND activo = TRUE', [email]);
     return r.rows[0] || null;
@@ -46,6 +56,7 @@ async function listar({ rol } = {}) {
 }
 
 module.exports = {
+    crear,
     buscarPorEmail,
     buscarPorTelegramChatId,
     vincularTelegram,
