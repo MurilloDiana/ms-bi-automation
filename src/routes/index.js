@@ -4,6 +4,7 @@ const router = require('express').Router();
 
 router.use('/activos',     require('./asset.routes'));
 router.use('/usuarios',    require('./user.routes'));
+router.use('/users',       require('./user.routes')); // alias para compatibilidad con app móvil
 router.use('/solicitudes', require('./maintenance.routes'));
 router.use('/kpis',        require('./kpi.routes'));
 router.use('/reportes',    require('./report.routes'));
