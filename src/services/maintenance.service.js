@@ -1,8 +1,10 @@
 'use strict';
 
 const maintenanceRepo = require('../repositories/maintenance.repository');
-const userRepo = require('../repositories/user.repository');
 const emailService = require('./email.service');
+const expoPushService = require('./expo-push.service');
+const pushTokenRepo = require('../repositories/push-token.repository');
+const config = require('../config/env');
 const { AppError } = require('../utils/response');
 const { addBusinessDays, toISODate } = require('../utils/dates');
 const logger = require('../config/logger');
@@ -11,7 +13,47 @@ async function crearSolicitud(data) {
     const solicitud = await maintenanceRepo.crear(data);
     logger.info({ id: solicitud.id, codigo: solicitud.codigo, canal: solicitud.canal_origen },
                 'Solicitud creada');
+
+    // Push no-bloqueante: fallo no interrumpe la respuesta al cliente
+    _notificarNuevaSolicitudPush(solicitud).catch(err =>
+        logger.error({ err, id: solicitud.id }, 'Error al enviar push de nueva solicitud')
+    );
+
     return solicitud;
+}
+
+/**
+ * Envía push a los roles configurados (SUPERADMIN, GERENTE) y al propio solicitante
+ * cuando se registra una nueva solicitud de mantenimiento.
+ */
+async function _notificarNuevaSolicitudPush(solicitud) {
+    const rolesNotificados = config.expoPush.rolesNotificados;
+
+    const [tokensRoles, tokensSolicitante] = await Promise.all([
+        pushTokenRepo.obtenerPorRoles(rolesNotificados),
+        pushTokenRepo.obtenerPorUsuario(solicitud.solicitante_id),
+    ]);
+
+    // Unión sin duplicados
+    const tokens = [...new Set([...tokensRoles, ...tokensSolicitante])];
+    if (!tokens.length) return;
+
+    const prioridadLabel = { BAJA: '🔵', MEDIA: '🟡', ALTA: '🟠', CRITICA: '🔴' };
+    const icono = prioridadLabel[solicitud.prioridad] || '';
+
+    await expoPushService.enviarPush({
+        tokens,
+        titulo: `${icono} Nueva solicitud de mantenimiento`,
+        cuerpo: `${solicitud.codigo} — ${solicitud.descripcion.slice(0, 80)}`,
+        data: {
+            tipo: 'NUEVA_SOLICITUD',
+            solicitudId: solicitud.id,
+            codigo: solicitud.codigo,
+            prioridad: solicitud.prioridad,
+        },
+        referenciaTipo: 'SOLICITUD',
+        referenciaId: solicitud.id,
+    });
 }
 
 async function obtenerPorId(id) {

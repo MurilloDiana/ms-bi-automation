@@ -59,6 +59,13 @@ const reporteQuerySchema = Joi.object({
     formato: Joi.string().valid('json', 'excel', 'pdf').default('json'),
 });
 
+const registrarPushTokenSchema = Joi.object({
+    token: Joi.string()
+        .pattern(/^ExponentPushToken\[.+\]$/)
+        .required()
+        .messages({ 'string.pattern.base': 'token debe tener el formato ExponentPushToken[...]' }),
+});
+
 module.exports = {
     crearActivoSchema,
     crearUsuarioSchema,
@@ -66,4 +73,5 @@ module.exports = {
     cambiarEstadoSchema,
     listarSolicitudesSchema,
     reporteQuerySchema,
+    registrarPushTokenSchema,
 };

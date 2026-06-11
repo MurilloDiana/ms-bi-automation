@@ -45,6 +45,12 @@ const config = {
         fromEmail: process.env.SMTP_FROM_EMAIL,
     },
 
+    expoPush: {
+        accessToken: process.env.EXPO_ACCESS_TOKEN || null,
+        // Roles que reciben push al crear una solicitud de mantenimiento
+        rolesNotificados: (process.env.EXPO_PUSH_ROLES || 'SUPERADMIN,GERENTE').split(',').map(r => r.trim()),
+    },
+
     cron: {
         enabled: toBool(process.env.ENABLE_CRON, true),
         depreciationSchedule: process.env.CRON_DEPRECIATION_SCHEDULE || '0 2 * * *',

@@ -9,4 +9,14 @@ router.post('/',
     validate(schemas.crearUsuarioSchema, 'body'),
     ctrl.crear);
 
+// Expo Push Token: la app móvil lo llama tras obtener getExpoPushTokenAsync()
+router.post('/:id/push-token',
+    validate(schemas.registrarPushTokenSchema, 'body'),
+    ctrl.registrarPushToken);
+
+// Llamado al cerrar sesión en la app móvil para dejar de recibir notificaciones
+router.delete('/:id/push-token',
+    validate(schemas.registrarPushTokenSchema, 'body'),
+    ctrl.eliminarPushToken);
+
 module.exports = router;
