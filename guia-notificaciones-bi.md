@@ -187,7 +187,7 @@ export async function obtenerExpoPushToken() {
 export async function registrarTokenEnBackend(usuarioId, token) {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/users/${usuarioId}/push-token`,
+      `${API_BASE_URL}/usuarios/${usuarioId}/push-token`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -217,7 +217,7 @@ export async function registrarTokenEnBackend(usuarioId, token) {
 export async function eliminarTokenDelBackend(usuarioId, token) {
   try {
     const response = await fetch(
-      `${API_BASE_URL}/users/${usuarioId}/push-token`,
+      `${API_BASE_URL}/usuarios/${usuarioId}/push-token`,
       {
         method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
@@ -388,7 +388,7 @@ async function handleLogout(usuarioId) {
 Llamar **una vez por sesión**, inmediatamente después del login exitoso.
 
 ```
-POST /api/v1/users/:usuarioId/push-token
+POST /api/v1/usuarios/:usuarioId/push-token
 ```
 
 | Campo | Valor |
@@ -437,7 +437,7 @@ POST /api/v1/users/:usuarioId/push-token
 Llamar antes de limpiar la sesión local.
 
 ```
-DELETE /api/v1/users/:usuarioId/push-token
+DELETE /api/v1/usuarios/:usuarioId/push-token
 ```
 
 | Campo | Valor |
