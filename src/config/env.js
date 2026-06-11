@@ -48,7 +48,7 @@ const config = {
     expoPush: {
         accessToken: process.env.EXPO_ACCESS_TOKEN || null,
         // Roles que reciben push al crear una solicitud de mantenimiento
-        rolesNotificados: (process.env.EXPO_PUSH_ROLES || 'SUPERADMIN,GERENTE').split(',').map(r => r.trim()),
+        rolesNotificados: (process.env.EXPO_PUSH_ROLES || 'SUPERADMIN,GERENTE,TECNICO').split(',').map(r => r.trim()),
     },
 
     cron: {
